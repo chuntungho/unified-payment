@@ -1,0 +1,13 @@
+payment:
+  wxpay:
+    sandbox: true
+    corpId: xxx
+    wxAppId: xxx
+    openAppId: xxx
+    mchId: xxx
+    key: xx
+    cert: xx
+    notifyUrl: http://xxx
+    refundNotifyUrl: http://xxx
+  alipay:
+    xxx: xxx
