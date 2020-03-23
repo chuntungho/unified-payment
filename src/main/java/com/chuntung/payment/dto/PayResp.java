@@ -1,9 +1,12 @@
 package com.chuntung.payment.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public class PayResp {
+public class PayResp implements Serializable {
+    private static final long serialVersionUID = -4933413366158026192L;
+
     // 是否支付成功
     private boolean success;
     private String errorCode;
@@ -72,5 +75,19 @@ public class PayResp {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("PayResp{");
+        sb.append("success=").append(success);
+        sb.append(", errorCode='").append(errorCode).append('\'');
+        sb.append(", errorMsg='").append(errorMsg).append('\'');
+        sb.append(", tradeNo='").append(tradeNo).append('\'');
+        sb.append(", tradeTime=").append(tradeTime);
+        sb.append(", requestNo='").append(requestNo).append('\'');
+        sb.append(", amount=").append(amount);
+        sb.append('}');
+        return sb.toString();
     }
 }

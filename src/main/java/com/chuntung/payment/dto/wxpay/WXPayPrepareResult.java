@@ -77,4 +77,19 @@ public class WXPayPrepareResult implements Serializable {
 	public void setPaySign(String paySign) {
 		this.paySign = paySign;
 	}
+
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder("WXPayPrepareResult{");
+		sb.append("appId='").append(appId).append('\'');
+		sb.append(", mchId='").append(mchId).append('\'');
+		sb.append(", prepayId='").append(prepayId).append('\'');
+		sb.append(", timeStamp='").append(timeStamp).append('\'');
+		sb.append(", nonceStr='").append(nonceStr).append('\'');
+		sb.append(", packageStr='").append(packageStr).append('\'');
+		sb.append(", signType='").append(signType).append('\'');
+		sb.append(", paySign='").append(paySign).append('\'');
+		sb.append('}');
+		return sb.toString();
+	}
 }

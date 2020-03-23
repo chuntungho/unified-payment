@@ -1,9 +1,12 @@
 package com.chuntung.payment.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public class RefundResp {
+public class RefundResp implements Serializable {
+    private static final long serialVersionUID = 6657364612503763189L;
+
     // 是否退款成功
     private boolean success;
     private String errorCode;
@@ -69,5 +72,19 @@ public class RefundResp {
 
     public void setTradeTime(Date tradeTime) {
         this.tradeTime = tradeTime;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("RefundResp{");
+        sb.append("success=").append(success);
+        sb.append(", errorCode='").append(errorCode).append('\'');
+        sb.append(", errorMsg='").append(errorMsg).append('\'');
+        sb.append(", requestNo='").append(requestNo).append('\'');
+        sb.append(", amount=").append(amount);
+        sb.append(", tradeNo='").append(tradeNo).append('\'');
+        sb.append(", tradeTime=").append(tradeTime);
+        sb.append('}');
+        return sb.toString();
     }
 }

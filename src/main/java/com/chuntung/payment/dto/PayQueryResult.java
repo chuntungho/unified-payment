@@ -1,9 +1,12 @@
 package com.chuntung.payment.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public class PayQueryResult {
+public class PayQueryResult implements Serializable {
+    private static final long serialVersionUID = 8756471524183185831L;
+
     private PayStateEnum state;
     // 是否有退款
     private Boolean refunded;
@@ -63,5 +66,18 @@ public class PayQueryResult {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("PayQueryResult{");
+        sb.append("state=").append(state);
+        sb.append(", refunded=").append(refunded);
+        sb.append(", tradeNo='").append(tradeNo).append('\'');
+        sb.append(", tradeTime=").append(tradeTime);
+        sb.append(", requestNo='").append(requestNo).append('\'');
+        sb.append(", amount=").append(amount);
+        sb.append('}');
+        return sb.toString();
     }
 }

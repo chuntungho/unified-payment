@@ -1,4 +1,4 @@
-package com.chuntung.payment;
+package com.chuntung.payment.service;
 
 import com.chuntung.payment.dto.FormResult;
 import com.chuntung.payment.dto.PayFromEnum;

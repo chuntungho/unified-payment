@@ -28,4 +28,13 @@ public class FormResult<T> implements Serializable{
     public void setFormParam(T formParam) {
         this.formParam = formParam;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("FormResult{");
+        sb.append("formUrl='").append(formUrl).append('\'');
+        sb.append(", formParam=").append(formParam);
+        sb.append('}');
+        return sb.toString();
+    }
 }

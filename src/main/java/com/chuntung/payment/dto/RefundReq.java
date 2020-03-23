@@ -3,6 +3,8 @@ package com.chuntung.payment.dto;
 import java.math.BigDecimal;
 
 public class RefundReq extends BaseReq {
+    private static final long serialVersionUID = -6987556730271012424L;
+
     // 退款请求号
     private String requestNo;
     // 退款金额，支持部分退款
@@ -52,5 +54,17 @@ public class RefundReq extends BaseReq {
 
     public void setOriginAmount(BigDecimal originAmount) {
         this.originAmount = originAmount;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("RefundReq{");
+        sb.append("requestNo='").append(requestNo).append('\'');
+        sb.append(", amount=").append(amount);
+        sb.append(", content='").append(content).append('\'');
+        sb.append(", payRequestNo='").append(payRequestNo).append('\'');
+        sb.append(", originAmount=").append(originAmount);
+        sb.append('}');
+        return sb.toString();
     }
 }

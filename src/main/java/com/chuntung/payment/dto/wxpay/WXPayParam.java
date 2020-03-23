@@ -1,6 +1,10 @@
 package com.chuntung.payment.dto.wxpay;
 
-public class WXPayParam {
+import java.io.Serializable;
+
+public class WXPayParam implements Serializable {
+    private static final long serialVersionUID = -689381524741278093L;
+
     // JSAPI 支付需要
     private String openId;
 
@@ -32,5 +36,15 @@ public class WXPayParam {
 
     public void setWxBrowser(Boolean wxBrowser) {
         this.wxBrowser = wxBrowser;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("WXPayParam{");
+        sb.append("openId='").append(openId).append('\'');
+        sb.append(", productId='").append(productId).append('\'');
+        sb.append(", wxBrowser=").append(wxBrowser);
+        sb.append('}');
+        return sb.toString();
     }
 }

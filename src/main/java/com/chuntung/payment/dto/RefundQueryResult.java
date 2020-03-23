@@ -1,9 +1,10 @@
 package com.chuntung.payment.dto;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public class RefundQueryResult {
+public class RefundQueryResult implements Serializable {
     private RefundStateEnum state;
 
     // 第三方交易号
@@ -53,5 +54,17 @@ public class RefundQueryResult {
 
     public void setAmount(BigDecimal amount) {
         this.amount = amount;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("RefundQueryResult{");
+        sb.append("state=").append(state);
+        sb.append(", tradeNo='").append(tradeNo).append('\'');
+        sb.append(", tradeTime=").append(tradeTime);
+        sb.append(", requestNo='").append(requestNo).append('\'');
+        sb.append(", amount=").append(amount);
+        sb.append('}');
+        return sb.toString();
     }
 }
