@@ -1,2 +1,2 @@
 # unified-payment
-Unified payment for WXPay and AliPay
+Unified payment backend for WXPay and AliPay (TODO)
