@@ -1,9 +1,13 @@
+/*
+ * Copyright (c) 2020-2021 Chuntung Ho. Some rights reserved.
+ */
+
 package com.chuntung.payment.service.impl.wxpay;
 
 import com.chuntung.payment.service.PaymentBridge;
 import com.chuntung.payment.service.PaymentException;
 import com.chuntung.payment.service.PaymentVendor;
-import com.chuntung.payment.conf.WXPaymentConfig;
+import com.chuntung.payment.conf.WXPaymentProperties;
 import com.chuntung.payment.dto.*;
 import com.chuntung.payment.dto.wxpay.WXPayPrepareResult;
 import com.chuntung.payment.dto.wxpay.WXPayParam;
@@ -23,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class WXPaymentVendor implements PaymentVendor {
+public class WXPaymentVendor implements PaymentVendor<WXPayParam> {
     private final static Logger logger = LoggerFactory.getLogger(WXPaymentVendor.class);
     private final static String RETURN_CODE = "return_code";
     private final static String RETURN_MSG = "return_msg";
@@ -35,7 +39,7 @@ public class WXPaymentVendor implements PaymentVendor {
     private Map<PayFromEnum, String> tradeTypes = new HashMap<>();
 
     @Resource
-    private WXPaymentConfig wxPaymentConfig;
+    private WXPaymentProperties wxPaymentProperties;
 
     @Resource
     private PaymentBridge paymentBridge;
@@ -43,25 +47,25 @@ public class WXPaymentVendor implements PaymentVendor {
     @PostConstruct
     private void init() {
         tradeTypes.put(PayFromEnum.PC, "NATIVE");
-        tradeTypes.put(PayFromEnum.MOBILE, "MWEB");
+        tradeTypes.put(PayFromEnum.H5, "MWEB");
         tradeTypes.put(PayFromEnum.APP, "APP");
-        tradeTypes.put(PayFromEnum.IN_APP, "JSAPI");
+        tradeTypes.put(PayFromEnum.EMBEDDED, "JSAPI");
 
         paymentBridge.registerVendor(PaymentVendorEnum.WXPay, this);
     }
 
     private WXPay getClient(PayFromEnum from) throws Exception {
-        String appId = wxPaymentConfig.getCorpId();
+        String appId = wxPaymentProperties.getCorpId();
         if (PayFromEnum.APP.equals(from)) {
-            appId = wxPaymentConfig.getOpenAppId();
-        } else if (PayFromEnum.IN_APP.equals(from)) {
-            appId = wxPaymentConfig.getWxAppId();
+            appId = wxPaymentProperties.getOpenAppId();
+        } else if (PayFromEnum.EMBEDDED.equals(from)) {
+            appId = wxPaymentProperties.getWxAppId();
         }
 
         WXPayConfigWrapper config = new WXPayConfigWrapper(appId,
-                wxPaymentConfig.getMchId(), wxPaymentConfig.getKey(), wxPaymentConfig.getCert());
+                wxPaymentProperties.getMchId(), wxPaymentProperties.getKey(), wxPaymentProperties.getCert());
         WXPay wxPay;
-        if (Boolean.TRUE.equals(wxPaymentConfig.getSandbox())) {
+        if (Boolean.TRUE.equals(wxPaymentProperties.getSandbox())) {
             resetSandboxKey(config);
             wxPay = new WXPay(config, false, true);
         } else {
@@ -93,7 +97,7 @@ public class WXPaymentVendor implements PaymentVendor {
      * @return
      */
     private SignType getSignType() {
-        if (Boolean.TRUE.equals(wxPaymentConfig.getSandbox())) {
+        if (Boolean.TRUE.equals(wxPaymentProperties.getSandbox())) {
             return WXPayConstants.SignType.MD5;
         } else {
             return WXPayConstants.SignType.HMACSHA256;
@@ -115,7 +119,7 @@ public class WXPaymentVendor implements PaymentVendor {
     }
 
     @Override
-    public FormResult<WXPayPrepareResult> preparePay(PayReq req) {
+    public FormResult<WXPayPrepareResult> preparePay(PayReq<WXPayParam> req) {
         Map<String, String> data = new HashMap<>();
         data.put("out_trade_no", req.getRequestNo());
         if (req.getContent() != null) {
@@ -124,9 +128,9 @@ public class WXPaymentVendor implements PaymentVendor {
         // 单位分
         data.put("total_fee", String.valueOf(req.getAmount().multiply(HUNDRED).intValue()));
         data.put("spbill_create_ip", req.getClientIp());
-        data.put("notify_url", wxPaymentConfig.getNotifyUrl());
+        data.put("notify_url", wxPaymentProperties.getNotifyUrl());
         data.put("trade_type", tradeTypes.get(req.getFrom()));
-        WXPayParam specialParam = (WXPayParam) req.getSpecialParam();
+        WXPayParam specialParam = req.getSpecialParam();
         if (specialParam != null) {
             if (specialParam.getOpenId() != null) {
                 data.put("openid", specialParam.getOpenId().trim());
@@ -134,7 +138,7 @@ public class WXPaymentVendor implements PaymentVendor {
             if (specialParam.getProductId() != null) {
                 data.put("product_id", specialParam.getProductId().trim());
             }
-            if (PayFromEnum.MOBILE.equals(req.getFrom())
+            if (PayFromEnum.H5.equals(req.getFrom())
                     && Boolean.TRUE.equals(specialParam.getWxBrowser())) {
                 data.put("trade_type", "JSAPI");
             }
@@ -225,7 +229,7 @@ public class WXPaymentVendor implements PaymentVendor {
         }
         data.put("refund_fee", String.valueOf(req.getAmount().multiply(HUNDRED).intValue()));
         data.put("total_fee", String.valueOf(req.getOriginAmount().multiply(HUNDRED).intValue()));
-        data.put("notify_url", wxPaymentConfig.getRefundNotifyUrl());
+        data.put("notify_url", wxPaymentProperties.getRefundNotifyUrl());
         try {
             WXPay wxPay = getClient(req.getFrom());
             Map<String, String> resp = wxPay.refund(data);
@@ -269,6 +273,11 @@ public class WXPaymentVendor implements PaymentVendor {
         }
     }
 
+    @Override
+    public Class<WXPayParam> getParamType() {
+        return WXPayParam.class;
+    }
+
     private WXPayPrepareResult generateParam(Map<String, String> resp, PayFromEnum from) throws Exception {
         WXPayPrepareResult result = new WXPayPrepareResult();
         String appId = resp.get("appid");
@@ -292,7 +301,7 @@ public class WXPaymentVendor implements PaymentVendor {
             param.put("package", "Sign=WXPay");
             param.put("noncestr", nonceStr);
             param.put("timestamp", timeStamp);
-            String sign = WXPayUtil.generateSignature(param, wxPaymentConfig.getKey(), signType);
+            String sign = WXPayUtil.generateSignature(param, wxPaymentProperties.getKey(), signType);
 
             // refer to https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_12&index=2&index=2
             // client require: appid(应用ID)/partnerid(商户号)/prepayid/package(Sign=WXPay)/noncestr/timestamp/sign
@@ -308,7 +317,7 @@ public class WXPaymentVendor implements PaymentVendor {
             param.put("nonceStr", nonceStr);
             param.put("package", "prepay_id=" + prepayId);
             param.put("signType", signType.toString());
-            String sign = WXPayUtil.generateSignature(param, wxPaymentConfig.getKey(), signType);
+            String sign = WXPayUtil.generateSignature(param, wxPaymentProperties.getKey(), signType);
 
             // client require: appId/timeStamp/nonceStr/package/signType/paySign
             result.setPackageStr("prepay_id=" + prepayId);
@@ -325,7 +334,7 @@ public class WXPaymentVendor implements PaymentVendor {
         String xml = "";
         try {
             Map<String, String> map = WXPayUtil.xmlToMap(respXml);
-            if (!WXPayUtil.isSignatureValid(map, wxPaymentConfig.getKey(), getSignType())) {
+            if (!WXPayUtil.isSignatureValid(map, wxPaymentProperties.getKey(), getSignType())) {
                 logger.error("签名不通过：{}", map);
                 return xml;
             }
@@ -371,7 +380,7 @@ public class WXPaymentVendor implements PaymentVendor {
                 return xml;
             }
 
-            String decrypted = WXPaymentUtil.decrypt(map.get("req_info"), wxPaymentConfig.getKey());
+            String decrypted = WXPaymentUtil.decrypt(map.get("req_info"), wxPaymentProperties.getKey());
 
             Map<String, String> resultMap = WXPayUtil.xmlToMap(decrypted);
             String status = resultMap.get("refund_status");

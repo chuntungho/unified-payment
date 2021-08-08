@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020-2021 Chuntung Ho. Some rights reserved.
+ */
+
 package com.chuntung.payment.service.impl.alipay;
 
 import com.chuntung.payment.service.PaymentVendor;
@@ -26,6 +30,11 @@ public class AliPaymentVendor implements PaymentVendor {
 
     @Override
     public RefundQueryResult queryRefund(RefundQueryReq req) {
+        return null;
+    }
+
+    @Override
+    public Class getParamType() {
         return null;
     }
 }

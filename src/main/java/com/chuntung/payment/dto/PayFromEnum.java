@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020-2021 Chuntung Ho. Some rights reserved.
+ */
+
 package com.chuntung.payment.dto;
 
 public enum PayFromEnum {
@@ -8,14 +12,13 @@ public enum PayFromEnum {
     /**
      * 移动端浏览器
      */
-    MOBILE,
+    H5,
     /**
      * 原生APP
      */
     APP,
     /**
-     * 平台小程序
+     * 小程序
      */
-    IN_APP;
-
+    EMBEDDED;
 }

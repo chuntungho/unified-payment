@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 2020-2021 Chuntung Ho. Some rights reserved.
+ */
+
 package com.chuntung.payment.conf;
 
-public class WXPaymentConfig {
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties("payment.wxpay")
+public class WXPaymentProperties {
     private Boolean sandbox;
 
     // 公众号ID

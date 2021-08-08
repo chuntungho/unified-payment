@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2020 Tony Ho. Some rights reserved.
+ */
+
 package com.chuntung.payment.service;
 
 import com.chuntung.payment.dto.FormResult;
@@ -5,14 +9,13 @@ import com.chuntung.payment.dto.PayFromEnum;
 import com.chuntung.payment.dto.PayReq;
 import com.chuntung.payment.dto.PaymentVendorEnum;
 import com.chuntung.payment.dto.wxpay.WXPayParam;
-import com.chuntung.payment.service.PaymentBridge;
-import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-
 import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 class PaymentBridgeTest {
@@ -21,7 +24,7 @@ class PaymentBridgeTest {
 
     @Test
     void preparePay() {
-        PayReq<WXPayParam> req = new PayReq<>();
+        PayReq<Object> req = new PayReq<>();
         req.setVendor(PaymentVendorEnum.WXPay);
         req.setFrom(PayFromEnum.PC);
         req.setRequestNo("test-request-no");
@@ -32,7 +35,7 @@ class PaymentBridgeTest {
         req.setSpecialParam(param);
 
         FormResult formResult = paymentBridge.preparePay(req);
-        Assert.assertNotNull(formResult.getFormParam());
+        assertNotNull(formResult.getFormParam());
     }
 
     @Test

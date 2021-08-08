@@ -1,8 +1,15 @@
+/*
+ * Copyright (c) 2020-2021 Chuntung Ho. Some rights reserved.
+ */
+
 package com.chuntung.payment.service;
 
 import com.chuntung.payment.dto.*;
+import com.chuntung.payment.dto.wxpay.WXPayParam;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +22,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class PaymentBridge {
     private Map<PaymentVendorEnum, PaymentVendor> vendors = new ConcurrentHashMap<>();
     private List<PaymentListener> listeners = new CopyOnWriteArrayList<>();
+
+    @Resource
+    private ObjectMapper objectMapper;
 
     private PaymentVendor getPayVendor(PaymentVendorEnum vendor) {
         return vendors.get(vendor);
@@ -45,8 +55,12 @@ public class PaymentBridge {
      * @param req
      * @return
      */
-    public FormResult preparePay(PayReq<?> req) {
+    public FormResult preparePay(PayReq<Object> req) {
         PaymentVendor paymentVendor = getPayVendor(req.getVendor());
+        if (req.getSpecialParam() != null) {
+            Object param = objectMapper.convertValue(req.getSpecialParam(), paymentVendor.getParamType());
+            req.setSpecialParam(param);
+        }
         return paymentVendor.preparePay(req);
     }
 
