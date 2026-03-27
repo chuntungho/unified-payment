@@ -14,4 +14,9 @@ public class PaymentConfiguration {
     public WXPaymentProperties wxPaymentConfig() {
         return new WXPaymentProperties();
     }
+
+    @Bean
+    public AliPaymentProperties aliPaymentConfig() {
+        return new AliPaymentProperties();
+    }
 }

@@ -7,9 +7,9 @@ package com.chuntung.payment.controller;
 import com.chuntung.payment.dto.*;
 import com.chuntung.payment.service.PaymentBridge;
 import com.chuntung.payment.service.PaymentCallbackFacade;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 import javax.annotation.Resource;
 
@@ -54,5 +54,15 @@ public class PaymentController {
     @PostMapping("callback/wxpayRefund")
     public String wxpayRefundCallback(@RequestBody String respXml) {
         return paymentCallbackFacade.wxpayRefundCallback(respXml);
+    }
+
+    @PostMapping("callback/alipay")
+    public String alipayCallback(@RequestParam Map<String, String> params) {
+        return paymentCallbackFacade.alipayCallback(params);
+    }
+
+    @PostMapping("callback/alipayRefund")
+    public String alipayRefundCallback(@RequestParam Map<String, String> params) {
+        return paymentCallbackFacade.alipayRefundCallback(params);
     }
 }

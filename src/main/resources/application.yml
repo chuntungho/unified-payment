@@ -10,4 +10,9 @@ payment:
     notifyUrl: http://xxx
     refundNotifyUrl: http://xxx
   alipay:
-    xxx: xxx
+    appId: xxx
+    privateKey: xxx
+    alipayPublicKey: xxx
+    gatewayUrl: https://openapi.alipay.com/gateway.do
+    notifyUrl: http://xxx
+    returnUrl: http://xxx
