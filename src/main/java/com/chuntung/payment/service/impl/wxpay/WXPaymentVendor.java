@@ -4,6 +4,7 @@
 
 package com.chuntung.payment.service.impl.wxpay;
 
+import com.chuntung.payment.service.CallbackVendor;
 import com.chuntung.payment.service.PaymentBridge;
 import com.chuntung.payment.service.PaymentException;
 import com.chuntung.payment.service.PaymentVendor;
@@ -27,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class WXPaymentVendor implements PaymentVendor<WXPayParam> {
+public class WXPaymentVendor implements PaymentVendor<WXPayParam>, CallbackVendor {
     private final static Logger logger = LoggerFactory.getLogger(WXPaymentVendor.class);
     private final static String RETURN_CODE = "return_code";
     private final static String RETURN_MSG = "return_msg";
@@ -52,6 +53,7 @@ public class WXPaymentVendor implements PaymentVendor<WXPayParam> {
         tradeTypes.put(PayFromEnum.EMBEDDED, "JSAPI");
 
         paymentBridge.registerVendor(PaymentVendorEnum.WXPay, this);
+        paymentBridge.registerCallbackVendor(this);
     }
 
     private WXPay getClient(PayFromEnum from) throws Exception {
@@ -329,6 +331,12 @@ public class WXPaymentVendor implements PaymentVendor<WXPayParam> {
         return result;
     }
 
+    @Override
+    public PaymentVendorEnum vendorEnum() {
+        return PaymentVendorEnum.WXPay;
+    }
+
+    @Override
     public String payCallback(String respXml) {
         logger.info("payCallback respXml:" + respXml);
         String xml = "";
@@ -371,6 +379,7 @@ public class WXPaymentVendor implements PaymentVendor<WXPayParam> {
         return xml;
     }
 
+    @Override
     public String refundCallback(String encryptedText) {
         String xml = "";
         try {

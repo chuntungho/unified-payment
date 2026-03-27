@@ -4,42 +4,31 @@
 
 package com.chuntung.payment.service;
 
-import com.chuntung.payment.service.impl.alipay.AliPaymentVendor;
-import com.chuntung.payment.service.impl.wxpay.WXPaymentVendor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.Map;
 
+/**
+ * Routes async payment/refund callbacks to the registered {@link CallbackVendor}.
+ * No vendor-specific code lives here; new vendors self-register via
+ * {@link PaymentBridge#registerCallbackVendor}.
+ */
 @Component
 public class PaymentCallbackFacade {
     private static final Logger logger = LoggerFactory.getLogger(PaymentCallbackFacade.class);
 
     @Resource
-    private WXPaymentVendor wxPaymentVendor;
+    private PaymentBridge paymentBridge;
 
-    @Resource
-    private AliPaymentVendor aliPaymentVendor;
-
-    public String wxpayCallback(String result) {
-        logger.info("WXPay result: {}", result);
-        return wxPaymentVendor.payCallback(result);
+    public String handlePayCallback(String vendor, String body) {
+        logger.info("Pay callback from vendor [{}]", vendor);
+        return paymentBridge.handlePayCallback(vendor, body);
     }
 
-    public String wxpayRefundCallback(String encryptedText) {
-        logger.info("WXPay refund result: {}", encryptedText);
-        return wxPaymentVendor.refundCallback(encryptedText);
-    }
-
-    public String alipayCallback(Map<String, String> params) {
-        logger.info("AliPay result: {}", params);
-        return aliPaymentVendor.payCallback(params);
-    }
-
-    public String alipayRefundCallback(Map<String, String> params) {
-        logger.info("AliPay refund result: {}", params);
-        return aliPaymentVendor.refundCallback(params);
+    public String handleRefundCallback(String vendor, String body) {
+        logger.info("Refund callback from vendor [{}]", vendor);
+        return paymentBridge.handleRefundCallback(vendor, body);
     }
 }

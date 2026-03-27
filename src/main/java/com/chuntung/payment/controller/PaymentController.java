@@ -7,11 +7,15 @@ package com.chuntung.payment.controller;
 import com.chuntung.payment.dto.*;
 import com.chuntung.payment.service.PaymentBridge;
 import com.chuntung.payment.service.PaymentCallbackFacade;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @RestController("payment")
 public class PaymentController {
@@ -46,23 +50,45 @@ public class PaymentController {
         return paymentBridge.queryRefund(req);
     }
 
-    @PostMapping("callback/wxpay")
-    public String wxpayCallback(@RequestBody String respXml) {
-        return paymentCallbackFacade.wxpayCallback(respXml);
+    /**
+     * Generic async payment callback endpoint.
+     * The {vendor} path variable must match a {@link com.chuntung.payment.dto.PaymentVendorEnum} name.
+     * Supports both XML bodies (e.g. WXPay) and URL-encoded form bodies (e.g. AliPay).
+     */
+    @PostMapping("callback/{vendor}/pay")
+    public String payCallback(@PathVariable String vendor, HttpServletRequest request) throws IOException {
+        return paymentCallbackFacade.handlePayCallback(vendor, readBody(request));
     }
 
-    @PostMapping("callback/wxpayRefund")
-    public String wxpayRefundCallback(@RequestBody String respXml) {
-        return paymentCallbackFacade.wxpayRefundCallback(respXml);
+    /**
+     * Generic async refund callback endpoint.
+     */
+    @PostMapping("callback/{vendor}/refund")
+    public String refundCallback(@PathVariable String vendor, HttpServletRequest request) throws IOException {
+        return paymentCallbackFacade.handleRefundCallback(vendor, readBody(request));
     }
 
-    @PostMapping("callback/alipay")
-    public String alipayCallback(@RequestParam Map<String, String> params) {
-        return paymentCallbackFacade.alipayCallback(params);
-    }
-
-    @PostMapping("callback/alipayRefund")
-    public String alipayRefundCallback(@RequestParam Map<String, String> params) {
-        return paymentCallbackFacade.alipayRefundCallback(params);
+    /**
+     * Reads the raw request body as a string.
+     * For URL-encoded form requests, reconstructs the body from parsed parameters
+     * (the servlet container may have consumed the input stream while populating params).
+     */
+    private String readBody(HttpServletRequest request) throws IOException {
+        String contentType = request.getContentType();
+        if (contentType != null && contentType.contains("application/x-www-form-urlencoded")) {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+                for (String value : entry.getValue()) {
+                    if (sb.length() > 0) {
+                        sb.append('&');
+                    }
+                    sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name()))
+                      .append('=')
+                      .append(URLEncoder.encode(value, StandardCharsets.UTF_8.name()));
+                }
+            }
+            return sb.toString();
+        }
+        return StreamUtils.copyToString(request.getInputStream(), StandardCharsets.UTF_8);
     }
 }

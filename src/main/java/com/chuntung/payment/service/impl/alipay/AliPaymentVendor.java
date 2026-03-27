@@ -13,6 +13,7 @@ import com.alipay.api.response.*;
 import com.chuntung.payment.conf.AliPaymentProperties;
 import com.chuntung.payment.dto.*;
 import com.chuntung.payment.dto.alipay.AliPayParam;
+import com.chuntung.payment.service.CallbackVendor;
 import com.chuntung.payment.service.PaymentBridge;
 import com.chuntung.payment.service.PaymentException;
 import com.chuntung.payment.service.PaymentVendor;
@@ -23,13 +24,15 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
+public class AliPaymentVendor implements PaymentVendor<AliPayParam>, CallbackVendor {
     private static final Logger logger = LoggerFactory.getLogger(AliPaymentVendor.class);
     private static final String CHARSET = "UTF-8";
     private static final String SIGN_TYPE = "RSA2";
@@ -45,6 +48,12 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
     @PostConstruct
     private void init() {
         paymentBridge.registerVendor(PaymentVendorEnum.AliPay, this);
+        paymentBridge.registerCallbackVendor(this);
+    }
+
+    @Override
+    public PaymentVendorEnum vendorEnum() {
+        return PaymentVendorEnum.AliPay;
     }
 
     private AlipayClient getClient() {
@@ -79,8 +88,7 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
                     model.setSubject(subject);
                     model.setProductCode("FAST_INSTANT_TRADE_PAY");
                     request.setBizModel(model);
-                    String form = client.pageExecute(request).getBody();
-                    return new FormResult<>(null, form);
+                    return new FormResult<>(null, client.pageExecute(request).getBody());
                 }
                 case H5: {
                     AlipayTradeWapPayRequest request = new AlipayTradeWapPayRequest();
@@ -92,8 +100,7 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
                     model.setSubject(subject);
                     model.setProductCode("QUICK_WAP_WAY");
                     request.setBizModel(model);
-                    String form = client.pageExecute(request).getBody();
-                    return new FormResult<>(null, form);
+                    return new FormResult<>(null, client.pageExecute(request).getBody());
                 }
                 case APP: {
                     AlipayTradeAppPayRequest request = new AlipayTradeAppPayRequest();
@@ -104,8 +111,7 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
                     model.setSubject(subject);
                     model.setProductCode("QUICK_MSECURITY_PAY");
                     request.setBizModel(model);
-                    String orderStr = client.sdkExecute(request).getBody();
-                    return new FormResult<>(null, orderStr);
+                    return new FormResult<>(null, client.sdkExecute(request).getBody());
                 }
                 case EMBEDDED: {
                     // 小程序支付：创建交易后由客户端调起支付
@@ -274,8 +280,14 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
         }
     }
 
-    public String payCallback(Map<String, String> params) {
+    /**
+     * Handles AliPay async payment notification.
+     * Accepts a URL-encoded form body as sent by AliPay servers.
+     */
+    @Override
+    public String payCallback(String body) {
         try {
+            Map<String, String> params = parseFormBody(body);
             boolean signVerified = AlipaySignature.rsaCheckV1(
                     params, aliPaymentProperties.getAlipayPublicKey(), CHARSET, SIGN_TYPE);
             if (!signVerified) {
@@ -296,7 +308,6 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
                 resp.setTradeTime(parseDate(params.get("gmt_payment")));
             } else {
                 resp.setErrorCode(tradeStatus);
-                resp.setErrorMsg(params.get("gmt_close"));
             }
 
             paymentBridge.notifyPayResult(resp);
@@ -307,8 +318,14 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
         }
     }
 
-    public String refundCallback(Map<String, String> params) {
+    /**
+     * Handles AliPay async refund notification.
+     * Accepts a URL-encoded form body as sent by AliPay servers.
+     */
+    @Override
+    public String refundCallback(String body) {
         try {
+            Map<String, String> params = parseFormBody(body);
             boolean signVerified = AlipaySignature.rsaCheckV1(
                     params, aliPaymentProperties.getAlipayPublicKey(), CHARSET, SIGN_TYPE);
             if (!signVerified) {
@@ -337,6 +354,28 @@ public class AliPaymentVendor implements PaymentVendor<AliPayParam> {
     @Override
     public Class<AliPayParam> getParamType() {
         return AliPayParam.class;
+    }
+
+    /**
+     * Parses a URL-encoded form body into a key-value map.
+     * Values are URL-decoded, matching what a servlet container would provide via getParameterMap().
+     */
+    private Map<String, String> parseFormBody(String body) throws Exception {
+        Map<String, String> params = new HashMap<>();
+        if (body == null || body.isEmpty()) {
+            return params;
+        }
+        for (String pair : body.split("&")) {
+            int idx = pair.indexOf('=');
+            if (idx > 0) {
+                String key = URLDecoder.decode(pair.substring(0, idx), CHARSET);
+                String value = idx < pair.length() - 1
+                        ? URLDecoder.decode(pair.substring(idx + 1), CHARSET)
+                        : "";
+                params.put(key, value);
+            }
+        }
+        return params;
     }
 
     private Date parseDate(String dateStr) {

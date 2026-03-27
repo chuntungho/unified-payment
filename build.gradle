@@ -22,7 +22,7 @@ dependencies {
     implementation fileTree(dir:'libs',include:['*.jar'])
     implementation 'org.apache.httpcomponents:httpclient:4.5.3'
     // https://mvnrepository.com/artifact/com.alipay.sdk/alipay-sdk-java
-    implementation group: 'com.alipay.sdk', name: 'alipay-sdk-java', version: '4.16.2.ALL'
+    implementation group: 'com.alipay.sdk', name: 'alipay-sdk-java', version: '4.40.705.ALL'
 
     // swagger
     implementation 'io.springfox:springfox-boot-starter:3.0.0'

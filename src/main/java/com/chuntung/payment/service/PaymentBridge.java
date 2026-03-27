@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Component
 public class PaymentBridge {
     private Map<PaymentVendorEnum, PaymentVendor> vendors = new ConcurrentHashMap<>();
+    private Map<PaymentVendorEnum, CallbackVendor> callbackVendors = new ConcurrentHashMap<>();
     private List<PaymentListener> listeners = new CopyOnWriteArrayList<>();
 
     @Resource
@@ -32,18 +33,20 @@ public class PaymentBridge {
 
     /**
      * 增加支持的支付渠道
-     *
-     * @param vendor
-     * @param vendorImpl
      */
     public void registerVendor(PaymentVendorEnum vendor, PaymentVendor vendorImpl) {
         vendors.put(vendor, vendorImpl);
     }
 
     /**
+     * 注册支付回调处理器
+     */
+    public void registerCallbackVendor(CallbackVendor handler) {
+        callbackVendors.put(handler.vendorEnum(), handler);
+    }
+
+    /**
      * 注册支付结果监听
-     *
-     * @param listener
      */
     public void registerListener(PaymentListener listener) {
         listeners.add(listener);
@@ -51,9 +54,6 @@ public class PaymentBridge {
 
     /**
      * 准备支付参数
-     *
-     * @param req
-     * @return
      */
     public FormResult preparePay(PayReq<Object> req) {
         PaymentVendor paymentVendor = getPayVendor(req.getVendor());
@@ -66,9 +66,6 @@ public class PaymentBridge {
 
     /**
      * 查询支付结果
-     *
-     * @param req
-     * @return
      */
     public PayQueryResult queryPay(PayQueryReq req) {
         PaymentVendor paymentVendor = getPayVendor(req.getVendor());
@@ -77,8 +74,6 @@ public class PaymentBridge {
 
     /**
      * 撤销支付请求
-     *
-     * @param req
      */
     public void closePay(PayQueryReq req) {
         PaymentVendor paymentVendor = getPayVendor(req.getVendor());
@@ -87,8 +82,6 @@ public class PaymentBridge {
 
     /**
      * 退款
-     *
-     * @param req
      */
     public void refund(RefundReq req) {
         PaymentVendor paymentVendor = getPayVendor(req.getVendor());
@@ -97,9 +90,6 @@ public class PaymentBridge {
 
     /**
      * 查询退款结果
-     *
-     * @param req
-     * @return
      */
     public RefundQueryResult queryRefund(RefundQueryReq req) {
         PaymentVendor paymentVendor = getPayVendor(req.getVendor());
@@ -107,9 +97,43 @@ public class PaymentBridge {
     }
 
     /**
-     * 支付结果通知
+     * 路由支付回调
      *
-     * @param resp
+     * @param vendorName {@link PaymentVendorEnum} name
+     * @param body       raw HTTP request body
+     */
+    public String handlePayCallback(String vendorName, String body) {
+        CallbackVendor handler = resolveCallbackVendor(vendorName);
+        return handler.payCallback(body);
+    }
+
+    /**
+     * 路由退款回调
+     *
+     * @param vendorName {@link PaymentVendorEnum} name
+     * @param body       raw HTTP request body
+     */
+    public String handleRefundCallback(String vendorName, String body) {
+        CallbackVendor handler = resolveCallbackVendor(vendorName);
+        return handler.refundCallback(body);
+    }
+
+    private CallbackVendor resolveCallbackVendor(String vendorName) {
+        PaymentVendorEnum vendorEnum;
+        try {
+            vendorEnum = PaymentVendorEnum.valueOf(vendorName);
+        } catch (IllegalArgumentException e) {
+            throw new PaymentException("Unknown payment vendor: " + vendorName);
+        }
+        CallbackVendor handler = callbackVendors.get(vendorEnum);
+        if (handler == null) {
+            throw new PaymentException("No callback handler registered for vendor: " + vendorName);
+        }
+        return handler;
+    }
+
+    /**
+     * 支付结果通知
      */
     public void notifyPayResult(PayResp resp) {
         for (PaymentListener listener : listeners) {
@@ -119,8 +143,6 @@ public class PaymentBridge {
 
     /**
      * 退款结果通知
-     *
-     * @param resp
      */
     public void notifyRefundResult(RefundResp resp) {
         for (PaymentListener listener : listeners) {
