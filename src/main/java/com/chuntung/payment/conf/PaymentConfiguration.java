@@ -19,4 +19,9 @@ public class PaymentConfiguration {
     public AliPaymentProperties aliPaymentConfig() {
         return new AliPaymentProperties();
     }
+
+    @Bean
+    public UnionPaymentProperties unionPaymentConfig() {
+        return new UnionPaymentProperties();
+    }
 }

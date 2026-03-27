@@ -16,3 +16,12 @@ payment:
     gatewayUrl: https://openapi.alipay.com/gateway.do
     notifyUrl: http://xxx
     returnUrl: http://xxx
+  unionpay:
+    merId: xxx
+    privateKeyPath: /path/to/acp_test_sign.pfx
+    privateKeyPwd: 000000
+    acpMiddleCertPath: /path/to/acp_test_middle.cer
+    acpRootCertPath: /path/to/acp_test_root.cer
+    notifyUrl: http://xxx
+    returnUrl: http://xxx
+    sandbox: true
